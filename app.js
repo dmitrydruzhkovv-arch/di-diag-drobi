@@ -377,8 +377,8 @@ function render(){
     fill.style.width=((idx+1)/DATA.questions.length*100)+'%';
     count.textContent=`${idx+1} / ${DATA.questions.length}`;
     document.getElementById('next').classList.remove('hidden');
-    // живая объяснялка — только если ошибся (угадал — не мешаем); измерение уже зафиксировано
-    if(q.explain && !chosen.ok){
+    // живая объяснялка — всегда после ответа; измерение уже зафиксировано кнопкой
+    if(q.explain){
       const host=document.getElementById('explain');
       if(host){ renderExplain(q.explain,host); requestAnimationFrame(()=>host.classList.remove('hidden')); }
     }
