@@ -11,14 +11,17 @@ const DATA = {
      opts:[{t:"3/8",ok:1},{t:"3/5"},{t:"5/8"},{t:"8/3"}],
      explain:{type:"bar-read",n:8,k:3,note:"Верх дроби — сколько закрашено, низ — на сколько долей делили."}},
     {id:"q02",theme:"Смысл и виды",ref:"Урок 1",cond:"Одна из этих дробей — неправильная. Найди её.",
-     opts:[{t:"7/5",ok:1},{t:"3/4"},{t:"5/8"},{t:"2/9"}]},
+     opts:[{t:"7/5",ok:1},{t:"3/4"},{t:"5/8"},{t:"2/9"}],
+     explain:{type:"improper-circle",num:7,den:5,note:"Неправильная дробь — это больше целого. 7/5 — это целый пирог и ещё 2/5 второго."}},
     {id:"q03",theme:"Сокращение",ref:"Урок 2",cond:"Запиши 6/8 короче — сократи.",
      opts:[{t:"3/4",ok:1},{t:"2/4"},{t:"6/8"},{t:"1/2"}],
      explain:{type:"reduce-circle",from:[6,8],to:[3,4],note:"Закрашено столько же — просто кусков стало крупнее. 6/8 = 3/4."}},
     {id:"q04",theme:"Сокращение",ref:"Урок 2",cond:"Сократи 12/18 до конца, не бросай на полпути.",
-     opts:[{t:"2/3",ok:1},{t:"6/9"},{t:"4/6"},{t:"1/2"}]},
+     opts:[{t:"2/3",ok:1},{t:"6/9"},{t:"4/6"},{t:"1/2"}],
+     explain:{type:"reduce-bar",from:[12,18],to:[2,3],note:"Делим верх и низ на 6: 12/18 = 2/3. Закрашено столько же — кусков стало крупнее."}},
     {id:"q05",theme:"Сравнение",ref:"Урок 2",cond:"Два повербанка: один заряжен на 3/5, другой на 5/8. У какого заряд больше?",
-     opts:[{t:"5/8",ok:1},{t:"3/5"},{t:"равны"},{t:"нельзя сравнить"}]},
+     opts:[{t:"5/8",ok:1},{t:"3/5"},{t:"равны"},{t:"нельзя сравнить"}],
+     explain:{type:"compare-bars",a:[3,5],b:[5,8],note:"Налей оба на одной шкале: у 5/8 столбик чуть выше — заряд больше."}},
     {id:"q06",theme:"Сравнение",ref:"Урок 2",cond:"Кусок в 1/4 пиццы или кусок в 1/6 — какой больше?",
      opts:[{t:"1/4",ok:1},{t:"1/6"},{t:"равны"},{t:"нельзя сравнить"}],
      explain:{type:"compare-circles",a:[1,4],b:[1,6],note:"Чем больше кусков — тем мельче каждый. 1/4 крупнее 1/6."}},
@@ -26,20 +29,26 @@ const DATA = {
      opts:[{t:"3/5",ok:1},{t:"3/10"},{t:"3/25"},{t:"2/5"}],
      explain:{type:"bar-add",n:5,k1:1,k2:2,note:"Доли одного размера — складываем верх, низ не трогаем. 1/5 + 2/5 = 3/5."}},
     {id:"q08",theme:"Сложение и вычитание",ref:"Урок 3",cond:"Утром прошёл 1/2 пути, после обеда ещё 1/3. Какая часть пути позади?",
-     opts:[{t:"5/6",ok:1},{t:"2/5"},{t:"2/6"},{t:"1/5"}]},
+     opts:[{t:"5/6",ok:1},{t:"2/5"},{t:"2/6"},{t:"1/5"}],
+     explain:{type:"bar-add-common",den:6,parts:[[1,2],[1,3]],result:[5,6],note:"Разный размер долей — приводим к шестым: 1/2 = 3/6, 1/3 = 2/6. Вместе 5/6."}},
     {id:"q09",theme:"Умножение и деление",ref:"Урок 4",cond:"В банке осталось 3/4 сока. Ты выпил половину от этого остатка. Какая часть полной банки оказалась у тебя в стакане?",
-     opts:[{t:"3/8",ok:1},{t:"4/6"},{t:"3/4"},{t:"2/6"}]},
+     opts:[{t:"3/8",ok:1},{t:"4/6"},{t:"3/4"},{t:"2/6"}],
+     explain:{type:"part-of-part",outer:[3,4],result:[3,8],note:"Берём половину от 3/4. Режем на восьмые: 3/4 = 6/8, половина от шести долей — это 3/8."}},
     {id:"q10",theme:"Умножение и деление",ref:"Урок 4",cond:"У тебя 3/4 пиццы. Одна порция — это 1/2 пиццы. Сколько порций выйдет?",
-     opts:[{t:"3/2",ok:1},{t:"3/8"},{t:"2/3"},{t:"1/2"}]},
+     opts:[{t:"3/2",ok:1},{t:"3/8"},{t:"2/3"},{t:"1/2"}],
+     explain:{type:"division-portions",pizza:[3,4],portion:[1,2],result:[3,2],note:"Сколько половинок помещается в 3/4? Одна целая половина и ещё половинка — это 3/2 = 1,5 порции."}},
     {id:"q11",theme:"Десятичные",ref:"Урок 5",cond:"Переведи 3/4 в десятичную дробь.",
-     opts:[{t:"0,75",ok:1},{t:"0,34"},{t:"0,43"},{t:"3,4"}]},
+     opts:[{t:"0,75",ok:1},{t:"0,34"},{t:"0,43"},{t:"3,4"}],
+     explain:{type:"decimal-bar",frac:[3,4],decimal:"0,75",note:"3/4 — это три четвертинки. Каждая четверть = 0,25, три штуки = 0,75."}},
     {id:"q12",theme:"Десятичные",ref:"Урок 5",cond:"На одной карте 0,5 ₽, на другой 0,45 ₽. Где денег больше?",
-     opts:[{t:"0,5",ok:1},{t:"0,45"},{t:"равны"},{t:"нельзя сравнить"}]},
+     opts:[{t:"0,5",ok:1},{t:"0,45"},{t:"равны"},{t:"нельзя сравнить"}],
+     explain:{type:"compare-bars",a:[5,10],b:[45,100],labelA:"0,5",labelB:"0,45",note:"0,5 — это пять десятых, 0,45 — чуть меньше. На общей шкале 0,5 выше."}},
     {id:"q13",theme:"Проценты",ref:"Урок 6",cond:"Скидка 25% на товар за 80 ₽. Какова сумма скидки в рублях?",
      opts:[{t:"20",ok:1},{t:"40"},{t:"25"},{t:"2"}],
      explain:{type:"percent-circle",percent:25,whole:80,unit:" ₽",note:"25% — это четверть. Делим 80 на 4 равных куска: один кусок = 20 ₽."}},
     {id:"q14",theme:"Проценты",ref:"Урок 6",cond:"Толстовка стоит 1000 ₽, скидка 20%. Сколько заплатишь на кассе?",
-     opts:[{t:"800 ₽",ok:1},{t:"980 ₽"},{t:"200 ₽"},{t:"750 ₽"}]},
+     opts:[{t:"800 ₽",ok:1},{t:"980 ₽"},{t:"200 ₽"},{t:"750 ₽"}],
+     explain:{type:"percent-remain",percent:20,whole:1000,unit:" ₽",note:"Скидка 20% — убираем одну пятую. Остаётся 80%: это 800 ₽."}},
   ],
   senseQ:["q05","q06","q12"],
 };
@@ -97,12 +106,39 @@ function exLight(host,uid,i){
   const el=host.querySelector(`[data-c="${uid}"][data-i="${i}"]`); if(!el) return;
   el.setAttribute('fill',EX_FILL); el.setAttribute('stroke',EX_SON); el.setAttribute('filter',`url(#exg${uid})`);
 }
+function exPaint(host,uid,i,fill,stroke){
+  const el=host.querySelector(`[data-c="${uid}"][data-i="${i}"]`); if(!el) return;
+  el.setAttribute('fill',fill); el.setAttribute('stroke',stroke); el.setAttribute('filter',`url(#exg${uid})`);
+}
 function exFrac(k,n){return `<span class="exf"><b>${k}</b><i></i><b>${n}</b></span>`;}
 
 // последовательность шагов с задержкой; гасим, если экран сменился
 function exSeq(host,steps){
   let t=0;
   steps.forEach(step=>{ t+=step.wait||0; setTimeout(()=>{ if(host.isConnected) step.run(); }, t); });
+}
+
+// непрерывный вертикальный столбик (батарейка/шкала) — заполняется на долю
+function exMeterSVG(uid,w,h){
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${exGlow(uid)}
+    <rect x="1" y="1" width="${w-2}" height="${h-2}" rx="8" fill="${EX_EMPTY}" stroke="${EX_SOFF}" stroke-width="2"/>
+    <rect data-m="${uid}" x="3" y="${h-3}" width="${w-6}" height="0" rx="6" fill="${EX_FILL}" filter="url(#exg${uid})" style="transition:height .6s cubic-bezier(.2,.8,.2,1),y .6s cubic-bezier(.2,.8,.2,1)"/></svg>`;
+}
+function exMeterTo(host,uid,frac,h){
+  const r=host.querySelector(`[data-m="${uid}"]`); if(!r) return;
+  const fh=(h-6)*frac; r.setAttribute('height',fh.toFixed(1)); r.setAttribute('y',(h-3-fh).toFixed(1));
+}
+// горизонтальная дорожка с заполнением (для пиццы-в-порциях / десятичной шкалы)
+function exTrackSVG(uid,w,h,ticks){
+  let s=`<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${exGlow(uid)}
+    <rect x="1" y="1" width="${w-2}" height="${h-2}" rx="7" fill="${EX_EMPTY}" stroke="${EX_SOFF}" stroke-width="2"/>
+    <rect data-m="${uid}" x="3" y="3" width="0" height="${h-6}" rx="5" fill="${EX_FILL}" filter="url(#exg${uid})" style="transition:width .6s cubic-bezier(.2,.8,.2,1)"/>`;
+  if(ticks){for(let i=1;i<ticks;i++){const x=3+(w-6)*i/ticks;s+=`<line x1="${x.toFixed(1)}" y1="3" x2="${x.toFixed(1)}" y2="${h-3}" stroke="#4a3a78" stroke-width="2" stroke-dasharray="3 3"/>`;}}
+  s+=`</svg>`;return s;
+}
+function exTrackTo(host,uid,frac,w){
+  const r=host.querySelector(`[data-m="${uid}"]`); if(!r) return;
+  r.setAttribute('width',((w-6)*frac).toFixed(1));
 }
 
 function renderExplain(spec,host){
@@ -178,6 +214,117 @@ function renderExplain(spec,host){
       {wait:700,run:()=>{if(lbl)lbl.innerHTML=`${percent}% = ${exFrac(1,n)} = <b class="exval">${val}${unit||''}</b>`;}},
     ]);
   }
+  else if(spec.type==='improper-circle'){
+    const {num,den}=spec; const ncirc=Math.ceil(num/den);
+    let figs=''; for(let i=0;i<ncirc;i++) figs+=`<div class="exstage">${exCircleSVG(uid+i,den,120)}</div>`;
+    host.innerHTML=`<div class="exhead">👀 пощупай, почему</div>
+      <div class="exfig excmp">${figs}</div>
+      <div class="exlbl">${exFrac(num,den)} <span class="exeq">&gt; целого</span></div>
+      <div class="exnote">${spec.note}</div>`;
+    const cells=[]; let left=num,c=0;
+    while(left>0){const take=Math.min(den,left);for(let j=0;j<take;j++)cells.push([c,j]);left-=take;c++;}
+    exSeq(host,cells.map(([ci,j])=>({wait:170,run:()=>exLight(host,uid+ci,j)})));
+  }
+  else if(spec.type==='reduce-bar'){
+    const [kf,nf]=spec.from,[kt,nt]=spec.to;
+    host.innerHTML=`<div class="exhead">👀 пощупай, почему</div>
+      <div class="exfig"><div class="exstage" id="exs">${exBarSVG(uid,nf,280,44)}</div></div>
+      <div class="exlbl" id="exl">${exFrac(kf,nf)}</div>
+      <div class="exnote">${spec.note}</div>`;
+    const stage=host.querySelector('#exs'), lbl=host.querySelector('#exl');
+    const steps=[];
+    for(let j=0;j<kf;j++) steps.push({wait:90,run:()=>exLight(host,uid,j)});
+    steps.push({wait:900,run:()=>{ if(!stage) return; const uid2=uid+'b'; stage.style.opacity=0;
+      setTimeout(()=>{ if(!host.isConnected) return;
+        stage.innerHTML=exBarSVG(uid2,nt,280,44); stage.style.opacity=1;
+        for(let j=0;j<kt;j++) setTimeout(()=>exLight(host,uid2,j),150*(j+1));
+        if(lbl) lbl.innerHTML=`${exFrac(kf,nf)} <span class="exeq">=</span> ${exFrac(kt,nt)}`;
+      },260);
+    }});
+    exSeq(host,steps);
+  }
+  else if(spec.type==='compare-bars'){
+    const [ka,na]=spec.a,[kb,nb]=spec.b; const va=ka/na, vb=kb/nb;
+    const la=spec.labelA||exFrac(ka,na), lb=spec.labelB||exFrac(kb,nb);
+    host.innerHTML=`<div class="exhead">👀 пощупай, почему</div>
+      <div class="exfig excmp">
+        <div class="excol">${exMeterSVG(uid+'a',56,118)}<div class="exlbl">${la}</div></div>
+        <div class="excol">${exMeterSVG(uid+'b',56,118)}<div class="exlbl">${lb}</div></div>
+      </div>
+      <div class="exnote">${spec.note}</div>`;
+    exSeq(host,[
+      {wait:340,run:()=>exMeterTo(host,uid+'a',va,118)},
+      {wait:60,run:()=>exMeterTo(host,uid+'b',vb,118)},
+    ]);
+  }
+  else if(spec.type==='bar-add-common'){
+    const den=spec.den; const conv=spec.parts.map(([k,n])=>k*den/n); const [rk,rn]=spec.result;
+    host.innerHTML=`<div class="exhead">👀 пощупай, почему</div>
+      <div class="exfig">${exBarSVG(uid,den,280,44)}</div>
+      <div class="exlbl" id="exl">${exFrac(0,den)}</div>
+      <div class="exnote">${spec.note}</div>`;
+    const lbl=host.querySelector('#exl'); const steps=[]; let filled=0;
+    const colors=[['rgba(168,85,247,.9)','#c084fc'],['rgba(217,70,239,.85)','#f0abfc']];
+    spec.parts.forEach((p,pi)=>{ const add=conv[pi]; for(let j=0;j<add;j++){ const idx=filled++; steps.push({wait:470,run:()=>{exPaint(host,uid,idx,colors[pi%2][0],colors[pi%2][1]); if(lbl)lbl.innerHTML=exFrac(idx+1,den);}});} });
+    steps.push({wait:520,run:()=>{ if(lbl) lbl.innerHTML=`${exFrac(spec.parts[0][0],spec.parts[0][1])} + ${exFrac(spec.parts[1][0],spec.parts[1][1])} = ${exFrac(rk,rn)}`;}});
+    exSeq(host,steps);
+  }
+  else if(spec.type==='part-of-part'){
+    const [ok,on]=spec.outer; const n2=on*2, fillN=ok*2; const [rk,rn]=spec.result;
+    host.innerHTML=`<div class="exhead">👀 пощупай, почему</div>
+      <div class="exfig">${exCircleSVG(uid,n2,170)}</div>
+      <div class="exlbl" id="exl">${exFrac(ok,on)}</div>
+      <div class="exnote">${spec.note}</div>`;
+    const lbl=host.querySelector('#exl'); const steps=[];
+    for(let j=0;j<fillN;j++) steps.push({wait:150,run:()=>exLight(host,uid,j)});
+    steps.push({wait:650,run:()=>{ if(lbl)lbl.innerHTML=`половина от ${exFrac(ok,on)}`;}});
+    for(let j=0;j<rk;j++) steps.push({wait:280,run:()=>exPaint(host,uid,j,'rgba(217,70,239,.9)','#f0abfc')});
+    steps.push({wait:520,run:()=>{ if(lbl)lbl.innerHTML=`${exFrac(ok,on)} → ${exFrac(rk,rn)}`;}});
+    exSeq(host,steps);
+  }
+  else if(spec.type==='division-portions'){
+    const [pk,pn]=spec.pizza; const [qk,qn]=spec.portion; const [rk,rn]=spec.result;
+    const pizza=pk/pn, port=qk/qn; const ticks=Math.round(1/port);
+    host.innerHTML=`<div class="exhead">👀 пощупай, почему</div>
+      <div class="exsub">целая пицца · делёж по ${exFrac(qk,qn)}</div>
+      <div class="exfig">${exTrackSVG(uid,280,46,ticks)}</div>
+      <div class="exlbl" id="exl">твоя пицца: ${exFrac(pk,pn)}</div>
+      <div class="exnote">${spec.note}</div>`;
+    const lbl=host.querySelector('#exl');
+    exSeq(host,[
+      {wait:420,run:()=>exTrackTo(host,uid,pizza,280)},
+      {wait:1000,run:()=>{ if(lbl)lbl.innerHTML=`помещается 1 порция…`;}},
+      {wait:1000,run:()=>{ if(lbl)lbl.innerHTML=`…и ещё половинка = <b class="exval">${exFrac(rk,rn)}</b> = 1,5 порции`;}},
+    ]);
+  }
+  else if(spec.type==='decimal-bar'){
+    const [k,n]=spec.frac;
+    host.innerHTML=`<div class="exhead">👀 пощупай, почему</div>
+      <div class="exfig">${exTrackSVG(uid,280,46,n)}</div>
+      <div class="exlbl" id="exl">${exFrac(0,n)}</div>
+      <div class="exnote">${spec.note}</div>`;
+    const lbl=host.querySelector('#exl'); const steps=[];
+    for(let j=1;j<=k;j++){ const v=j/n, ds=(''+v).replace('.',','); steps.push({wait:620,run:()=>{exTrackTo(host,uid,v,280); if(lbl)lbl.innerHTML=`${exFrac(j,n)} = <b class="exval">${ds}</b>`;}});}
+    exSeq(host,steps);
+  }
+  else if(spec.type==='percent-remain'){
+    const {percent,whole,unit}=spec; const n=Math.round(100/percent);
+    const remain=n-1, val=whole*remain/n;
+    host.innerHTML=`<div class="exhead">👀 пощупай, почему</div>
+      <div class="exfig">${exCircleSVG(uid,n,170)}</div>
+      <div class="exlbl" id="exl">100% = ${whole}${unit||''}</div>
+      <div class="exnote">${spec.note}</div>`;
+    const lbl=host.querySelector('#exl'); const steps=[];
+    for(let j=0;j<n;j++) steps.push({wait:130,run:()=>exLight(host,uid,j)});
+    steps.push({wait:750,run:()=>{ const el=host.querySelector(`[data-c="${uid}"][data-i="${n-1}"]`);
+      if(el){el.setAttribute('fill',EX_EMPTY);el.setAttribute('stroke',EX_SOFF);el.removeAttribute('filter');}
+      if(lbl)lbl.innerHTML=`−${percent}% скидка`;}});
+    steps.push({wait:750,run:()=>{ if(lbl)lbl.innerHTML=`осталось ${remain*percent}% = <b class="exval">${val}${unit||''}</b>`;}});
+    exSeq(host,steps);
+  }
+  // кнопка повтора анимации
+  host.insertAdjacentHTML('beforeend',`<button class="exreplay" type="button">↻ повторить</button>`);
+  const rb=host.querySelector('.exreplay'); if(rb) rb.onclick=()=>renderExplain(spec,host);
 }
 
 /* ====== ЭКРАНЫ ====== */
@@ -230,8 +377,8 @@ function render(){
     fill.style.width=((idx+1)/DATA.questions.length*100)+'%';
     count.textContent=`${idx+1} / ${DATA.questions.length}`;
     document.getElementById('next').classList.remove('hidden');
-    // живая объяснялка — после ответа (измерение уже зафиксировано кнопкой)
-    if(q.explain){
+    // живая объяснялка — только если ошибся (угадал — не мешаем); измерение уже зафиксировано
+    if(q.explain && !chosen.ok){
       const host=document.getElementById('explain');
       if(host){ renderExplain(q.explain,host); requestAnimationFrame(()=>host.classList.remove('hidden')); }
     }

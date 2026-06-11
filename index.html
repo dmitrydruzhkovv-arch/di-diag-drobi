@@ -115,11 +115,17 @@
   .exf{display:inline-flex;flex-direction:column;align-items:center;line-height:1;
     font-family:"JetBrains Mono",ui-monospace,monospace;vertical-align:middle}
   .exf b{font-weight:700;font-size:19px;font-variant-numeric:tabular-nums}
-  .exf i{width:26px;height:3px;border-radius:3px;margin:3px 0;
-    background:linear-gradient(90deg,var(--neon2),var(--neon))}
+  .exf i{width:26px;height:3px;border-radius:3px;margin:3px 0;background:var(--neon2)}
   .exeq,.exval{font-family:"JetBrains Mono",monospace;font-weight:700}
   .exval{color:var(--ok)}
   .exnote{font-size:14px;line-height:1.45;color:var(--muted);text-align:center;margin-top:4px}
+  .exsub{font-size:13px;color:var(--muted);text-align:center;margin:-6px 0 8px;display:flex;
+    align-items:center;justify-content:center;gap:6px}
+  .exreplay{display:block;margin:14px auto 0;background:transparent;border:1.5px solid var(--line);
+    color:var(--muted);font-family:inherit;font-size:13px;font-weight:700;padding:9px 18px;
+    border-radius:11px;cursor:pointer;transition:border-color .2s,color .2s}
+  .exreplay:hover{border-color:var(--neon2);color:var(--ink)}
+  .exreplay:active{transform:scale(.97)}
 </style>
 </head>
 <body>
