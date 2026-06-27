@@ -1,11 +1,19 @@
+/* Диагностика дробей — v2 (ступень 1 воронки, лид-диагностика).
+   Обёртка как у входного теста ОГЭ 8→9: бренд-кит, без обложки (старт сразу с
+   вопроса), вспышки-ромбы на каждый ответ, финал = кликабельная карта тем с
+   разбором каждого задания. Содержание (14 вопросов + живые объяснялки) — из v1,
+   не менялось. Математику не трогаем. */
 
-window.onerror=function(m,s,l){var r=document.getElementById('root')||document.body;r.innerHTML='<pre style="color:#f43f5e;padding:16px;white-space:pre-wrap;font-size:13px">JS error:\n'+m+'\n(line '+l+')</pre>';};
+window.onerror=function(m,s,l){var r=document.getElementById('screen')||document.body;r.innerHTML='<pre style="color:#f43f5e;padding:16px;white-space:pre-wrap;font-size:13px">JS error:\n'+m+'\n(line '+l+')</pre>';};
 
-/* ====== ДАННЫЕ (из diagnostic_drobi.json, Методист · cond_voice) ======
+/* ====== ДАННЫЕ (Методист · cond_voice) — БЕЗ ИЗМЕНЕНИЙ из v1 ======
    opts: массив {t:текст, ok:1 у правильного}. Порядок показа перемешивается. */
 const DATA = {
-  intro:"Давай честно глянем, как у тебя с дробями? 14 вопросов, минут семь. Без оценок в дневник — только ты и карта: где уже крут, а что стоит подтянуть. 🧠📊",
-  cta_url:"https://vk.me/club238196266",
+  cta:{
+    label:"Хочу разобрать это на пробном →",
+    note:"Откроется чат с Ди. Напиши «прошёл тест» — подберём время. Бесплатно, без обязательств.",
+    url:"https://vk.me/club238196266"
+  },
   questions:[
     {id:"q01",theme:"Смысл и виды",ref:"Урок 1",cond:"Какая часть полоски закрашена?",svg:"pie8_3",
      opts:[{t:"3/8",ok:1},{t:"3/5"},{t:"5/8"},{t:"8/3"}],
@@ -56,12 +64,38 @@ const THEMES=["Смысл и виды","Сокращение","Сравнени�
 const KEYS=["A","B","C","D"];
 function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 
+/* ====== БУМ-ЭФФЕКТ (вспышки ромбов + звук, как у теста 8→9) ======
+   Диагностика показывает правильность по ходу, поэтому вспышка дифференцированная:
+   верно → зелёная + win, неверно → красная + lose. */
+function lkFlash(el){ if(!el) return; el.classList.remove('is-on'); void el.offsetWidth; el.classList.add('is-on'); }
+function playSound(id){ const a=document.getElementById(id); if(!a) return; try{ a.currentTime=0; a.play().catch(()=>{});}catch(e){} }
+function flashOk(){ lkFlash(document.getElementById('lk-fx-ok')); playSound('snd-win'); }
+function flashBad(){ lkFlash(document.getElementById('lk-fx-bad')); playSound('snd-lose'); }
+
+/* ====== РЕНДЕР МАТЕМАТИКИ (для вариантов и разбора) ======
+   `моно` · **акцент** · 7/4 → двухэтажная дробь. */
+function makeFrac(n,d){ return `<span class="frac lk-mono"><span class="fn">${n}</span><span class="fd">${d}</span></span>`; }
+function fmtInline(text){
+  if(text==null) return '';
+  return String(text)
+    .replace(/\*\*(.+?)\*\*/g,(_,s)=>`<span class="lk-hl">${s}</span>`)
+    .replace(/`([^`]+)`/g,(_,s)=>`<span class="lk-mono">${s}</span>`)
+    .replace(/(\d+)\/(\d+)/g,(_,n,d)=>makeFrac(n,d));
+}
+function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){[a,b]=[b,a%b];}return a||1;}
+function lcm(a,b){return a/gcd(a,b)*b;}
+
+/* ====== ОТЧЁТ ЛИДА (#38) — анонимный код-мост ======
+   Лид без ника → генерим короткий код. На CTA шлём итоги на тот же эндпоинт #38
+   (token=код): Ди получает разбор в ВК, лид пишет «тест КОД» — Ди сматчит. ПДн нет.
+   CORS эндпоинта пускает только прод github.io → локальные превью не шлют. */
+const HW_ENDPOINT='https://194-87-110-53.nip.io/hw-result';
+const LEAD_CODE=Math.random().toString(36).slice(2,6).toUpperCase();
+let reported=false;
+
 /* ====== СОСТОЯНИЕ ====== */
-let idx=0; const answers={}; // id -> {ok:bool}
-const root=document.getElementById('root');
-const topEl=document.getElementById('top');
-const fill=document.getElementById('fill');
-const count=document.getElementById('count');
+let idx=0; const answers={}; // id -> {ok:bool, pick:int(индекс в показанном порядке)}
+const screen=()=>document.getElementById('screen');
 
 const svgPie8 = `<svg width="220" height="92" viewBox="0 0 220 92" xmlns="http://www.w3.org/2000/svg">
   ${Array.from({length:8}).map((_,i)=>{
@@ -74,9 +108,7 @@ const svgPie8 = `<svg width="220" height="92" viewBox="0 0 220 92" xmlns="http:/
   <defs><filter id="g"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
 </svg>`;
 
-/* ====== ОБЪЯСНЯЛКИ (живая математика, авто-анимация, после ответа) ======
-   Появляются ПОСЛЕ выбора ответа — диагностика измеряет кнопками, объяснялка учит.
-   Геометрия долей/секторов портирована из живой_пирог. Без Pointer Events. */
+/* ====== ЖИВЫЕ ОБЪЯСНЯЛКИ (живая математика) — БЕЗ ИЗМЕНЕНИЙ из v1 ====== */
 const EX_FILL='rgba(168,85,247,.85)', EX_EMPTY='rgba(255,255,255,.05)';
 const EX_SON='#c084fc', EX_SOFF='#2a2a4d';
 
@@ -112,13 +144,11 @@ function exPaint(host,uid,i,fill,stroke){
 }
 function exFrac(k,n){return `<span class="exf"><b>${k}</b><i></i><b>${n}</b></span>`;}
 
-// последовательность шагов с задержкой; гасим, если экран сменился
 function exSeq(host,steps){
   let t=0;
   steps.forEach(step=>{ t+=step.wait||0; setTimeout(()=>{ if(host.isConnected) step.run(); }, t); });
 }
 
-// непрерывный вертикальный столбик (батарейка/шкала) — заполняется на долю
 function exMeterSVG(uid,w,h){
   return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${exGlow(uid)}
     <rect x="1" y="1" width="${w-2}" height="${h-2}" rx="8" fill="${EX_EMPTY}" stroke="${EX_SOFF}" stroke-width="2"/>
@@ -128,7 +158,6 @@ function exMeterTo(host,uid,frac,h){
   const r=host.querySelector(`[data-m="${uid}"]`); if(!r) return;
   const fh=(h-6)*frac; r.setAttribute('height',fh.toFixed(1)); r.setAttribute('y',(h-3-fh).toFixed(1));
 }
-// горизонтальная дорожка с заполнением (для пиццы-в-порциях / десятичной шкалы)
 function exTrackSVG(uid,w,h,ticks){
   let s=`<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${exGlow(uid)}
     <rect x="1" y="1" width="${w-2}" height="${h-2}" rx="7" fill="${EX_EMPTY}" stroke="${EX_SOFF}" stroke-width="2"/>
@@ -175,7 +204,6 @@ function renderExplain(spec,host){
     const stage=host.querySelector('#exs'), lbl=host.querySelector('#exl');
     const steps=[];
     for(let j=0;j<kf;j++) steps.push({wait:300,run:()=>exLight(host,uid,j)});
-    // перегруппировка: тот же сектор, но крупнее доли
     steps.push({wait:900,run:()=>{
       if(!stage) return;
       const uid2=uid+'b';
@@ -245,7 +273,13 @@ function renderExplain(spec,host){
   }
   else if(spec.type==='compare-bars'){
     const [ka,na]=spec.a,[kb,nb]=spec.b; const va=ka/na, vb=kb/nb;
-    const la=spec.labelA||exFrac(ka,na), lb=spec.labelB||exFrac(kb,nb);
+    let la, lb;
+    if(spec.labelA||spec.labelB){ la=spec.labelA||exFrac(ka,na); lb=spec.labelB||exFrac(kb,nb); }
+    else {                                   // обе обыкновенные → показываем приведение к общему знаменателю
+      const L=lcm(na,nb);
+      la=`${exFrac(ka,na)} <span class="exeq">=</span> ${exFrac(ka*L/na,L)}`;
+      lb=`${exFrac(kb,nb)} <span class="exeq">=</span> ${exFrac(kb*L/nb,L)}`;
+    }
     host.innerHTML=`<div class="exhead">👀 пощупай, почему</div>
       <div class="exfig excmp">
         <div class="excol">${exMeterSVG(uid+'a',56,118)}<div class="exlbl">${la}</div></div>
@@ -322,123 +356,211 @@ function renderExplain(spec,host){
     steps.push({wait:750,run:()=>{ if(lbl)lbl.innerHTML=`осталось ${remain*percent}% = <b class="exval">${val}${unit||''}</b>`;}});
     exSeq(host,steps);
   }
-  // кнопка повтора анимации
   host.insertAdjacentHTML('beforeend',`<button class="exreplay" type="button">↻ повторить</button>`);
   const rb=host.querySelector('.exreplay'); if(rb) rb.onclick=()=>renderExplain(spec,host);
 }
 
-/* ====== ЭКРАНЫ ====== */
-function intro(){
-  topEl.classList.add('hidden');
-  root.innerHTML=`<div class="screen">
-    <div class="kicker">Диагностика · 7 минут</div>
-    <h1>Дроби: где ты сейчас?</h1>
-    <p class="lead">${DATA.intro}</p>
-    <div class="btn-row">
-      <button class="btn" id="go">Поехали 🚀</button>
-      <button class="btn ghost" id="later">Чуть позже</button>
-    </div>
-  </div>`;
-  document.getElementById('go').onclick=()=>{idx=0;render();};
-  document.getElementById('later').onclick=()=>{root.innerHTML=`<div class="screen"><p class="lead">Окей! Возвращайся, когда будешь готов 💜</p></div>`;};
-}
-
+/* ====== РЕНДЕР ВОПРОСА (без обложки — сразу карточка) ====== */
 function render(){
-  const q=DATA.questions[idx];
-  topEl.classList.remove('hidden');
-  fill.style.width=((idx)/DATA.questions.length*100)+'%';
-  count.textContent=`${idx} / ${DATA.questions.length}`;
+  const q=DATA.questions[idx], n=DATA.questions.length;
+  document.getElementById('prog-label').textContent=`${idx+1} из ${n}`;
+  document.getElementById('prog-fill').style.width=`${(idx/n)*100}%`;
 
   // перемешиваем варианты один раз на вопрос (правильный — на случайной позиции)
   const shown = q._shown || (q._shown = shuffle(q.opts));
+  const fig = q.svg==='pie8_3' ? `<div class="qfig">${svgPie8}</div>` : '';
 
-  const fig = q.svg==='pie8_3' ? `<div class="fig">${svgPie8}</div>` : '';
-  root.innerHTML=`<div class="screen" key="${q.id}">
-    <div class="q">${q.theme} · вопрос ${idx+1}</div>
-    <p class="cond">${q.cond}</p>
-    ${fig}
-    <div class="opts" id="opts">
-      ${shown.map((o,i)=>`<button class="opt" data-i="${i}"><span class="key">${KEYS[i]}</span><span>${o.t}</span></button>`).join('')}
-    </div>
-    <div class="explain hidden" id="explain"></div>
-    <div class="next"><button class="btn hidden" id="next">${idx<DATA.questions.length-1?'Дальше →':'Узнать результат ✨'}</button></div>
-  </div>`;
+  screen().innerHTML=`
+    <div class="task-card lk-card">
+      <div class="task-head">
+        <span class="task-label">${q.theme} · <span class="og">вопрос ${idx+1}</span></span>
+      </div>
+      <p class="cond">${fmtInline(q.cond)}</p>
+      ${fig}
+      <div class="opts" id="opts">
+        ${shown.map((o,i)=>`<button class="opt" data-i="${i}"><span class="opt-key">${KEYS[i]}</span><span>${fmtInline(o.t)}</span></button>`).join('')}
+      </div>
+      <div class="explain hidden" id="explain"></div>
+      <button class="lk-btn next-btn" id="next" hidden>${idx<n-1?'Дальше →':'Показать карту ✨'}</button>
+    </div>`;
+  window.scrollTo(0,0);
 
   const opts=[...document.querySelectorAll('.opt')];
-  opts.forEach(o=>o.onclick=()=>{
+  opts.forEach(o=>o.addEventListener('click',()=>{
     if(answers[q.id]) return;
-    const chosen=shown[+o.dataset.i]; answers[q.id]={ok:!!chosen.ok};
+    const pi=+o.dataset.i, chosen=shown[pi];
+    answers[q.id]={ok:!!chosen.ok, pick:pi};
     opts.forEach(x=>{
-      x.classList.add('locked');
+      x.classList.add('is-locked');
       const oo=shown[+x.dataset.i];
       if(oo.ok) x.classList.add('correct');
       if(x===o && !chosen.ok) x.classList.add('wrong');
     });
-    fill.style.width=((idx+1)/DATA.questions.length*100)+'%';
-    count.textContent=`${idx+1} / ${DATA.questions.length}`;
-    document.getElementById('next').classList.remove('hidden');
+    if(chosen.ok){ flashOk(); }
+    else {
+      flashBad();
+      // тряска карточки (.lk-card-shake из кита). Класс НЕ снимаем: снятие вернуло бы
+      // .task-card{animation:lk-in} → карточка мигала бы прозрачностью (баг). По концу
+      // тряски просто замораживаем анимацию, чтобы entrance не переигрывался.
+      const card=screen().querySelector('.task-card');
+      if(card){ card.classList.add('lk-card-shake');
+        card.addEventListener('animationend',()=>{ card.style.animation='none'; },{once:true}); }
+    }
+    document.getElementById('prog-fill').style.width=`${((idx+1)/n)*100}%`;
+    document.getElementById('next').hidden=false;
     // живая объяснялка — всегда после ответа; измерение уже зафиксировано кнопкой
     if(q.explain){
       const host=document.getElementById('explain');
       if(host){ renderExplain(q.explain,host); requestAnimationFrame(()=>host.classList.remove('hidden')); }
     }
-  });
-  document.getElementById('next').onclick=()=>{
+  }));
+  document.getElementById('next').addEventListener('click',()=>{
     idx++;
-    if(idx>=DATA.questions.length){result();}
+    if(idx>=DATA.questions.length) showProfile();
     else render();
-  };
+  });
 }
 
-/* ====== РЕЗУЛЬТАТ (профиль, не балл) ====== */
+/* ====== РАЗБОР ОДНОГО ВОПРОСА (раскрывается на карте по тапу темы) ====== */
+function rvRow(inner,isCorrect,isPicked){
+  const cls=isCorrect?'ok':(isPicked?'bad':'');
+  const mk=isCorrect?'✅':(isPicked?'✖':'·');
+  const tag=(isCorrect&&isPicked)?'твой · верно':isCorrect?'правильный':isPicked?'твой выбор':'';
+  return `<div class="rv-opt ${cls}"><span class="mk">${mk}</span><span>${inner}</span>${tag?`<span class="rv-tag">${tag}</span>`:''}</div>`;
+}
+function renderReview(q){
+  const a=answers[q.id]||{};
+  const shown=q._shown||q.opts;
+  const fig = q.svg==='pie8_3' ? `<div class="qfig" style="margin-bottom:12px">${svgPie8}</div>` : '';
+  const list=shown.map((o,i)=>rvRow(
+    `<span class="opt-key">${KEYS[i]}</span>${fmtInline(o.t)}`,
+    !!o.ok, i===a.pick)).join('');
+  const note = q.explain&&q.explain.note ? `<p class="rv-note">${fmtInline(q.explain.note)}</p>` : '';
+  const okBadge = a.ok ? '✅ верно' : '❌ мимо';
+  return `
+    <div class="rv-card">
+      <p class="rv-q">${fmtInline(q.cond)} <span class="rv-tag">${okBadge}</span></p>
+      ${fig}
+      <div class="rv-list">${list}</div>
+      ${note}
+    </div>`;
+}
+
+/* ====== ПРОФИЛЬ (итог, не балл) ====== */
 function isCorrect(id){return !!(answers[id]&&answers[id].ok);}
 
-function result(){
-  topEl.classList.add('hidden');
-  const byTheme={};
-  DATA.questions.forEach(q=>{(byTheme[q.theme]=byTheme[q.theme]||[]).push(isCorrect(q.id));});
+// #38 — на CTA шлём анонимный отчёт (token=код лида). Только с прода; ?nosend=1 глушит.
+function reportResults(){
+  if(reported) return;
+  if(!/github\.io$/i.test(location.hostname)) return;
+  if(new URLSearchParams(location.search).has('nosend')) return;
+  reported=true;
+  const qs=DATA.questions;
+  const score=qs.filter(q=>isCorrect(q.id)).length;
+  const errors=[]; qs.forEach((q,i)=>{ if(!isCorrect(q.id)) errors.push(`№${i+1} ${q.theme}`); });
+  // полный разбор по каждому заданию — для «результата по ссылке» (серверная часть подхватит)
+  const detail=qs.map((q,i)=>{
+    const a=answers[q.id]||{}, shown=q._shown||q.opts;
+    return { n:i+1, theme:q.theme, cond:q.cond,
+      your: (a.pick!=null && shown[a.pick]) ? shown[a.pick].t : '—',
+      correct: (q.opts.find(o=>o.ok)||{}).t || '',
+      ok: !!a.ok };
+  });
+  try{
+    fetch(HW_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({token:LEAD_CODE, hw:'Диагностика дробей', hw_id:'diag-drobi', score, total:qs.length, errors, detail}),
+      keepalive:true}).catch(()=>{});
+  }catch(e){}
+}
+
+function showProfile(){
+  document.getElementById('hw-header').hidden=true;
+  screen().hidden=true;
+
+  const qs=DATA.questions, n=qs.length;
+  const byTheme={}; qs.forEach(q=>{(byTheme[q.theme]=byTheme[q.theme]||[]).push(isCorrect(q.id));});
   const status={};
-  THEMES.forEach(t=>{const a=byTheme[t]||[];const c=a.filter(Boolean).length;status[t]=c===a.length?'ok':(c===0?'gap':'warn');});
+  THEMES.forEach(t=>{const a=byTheme[t]||[];const c=a.filter(Boolean).length;status[t]=a.length===0?'warn':(c===a.length?'ok':(c===0?'gap':'warn'));});
 
   const strong=THEMES.filter(t=>status[t]==='ok');
-  const gaps=THEMES.filter(t=>status[t]==='gap'||status[t]==='warn');
-
+  const gaps=THEMES.filter(t=>status[t]!=='ok');
   const senseMiss=DATA.senseQ.filter(id=>!isCorrect(id)).length;
-  const mechMiss=DATA.questions.filter(q=>!DATA.senseQ.includes(q.id)&&!isCorrect(q.id)).length;
-  let verdict;
-  if(senseMiss===0&&mechMiss>0) verdict="Чувствуешь число, но техника местами хромает — база есть, шлифуем приёмы.";
-  else if(mechMiss===0&&senseMiss>0) verdict="Считаешь по правилам, но не всегда чувствуешь — легко не заметить абсурдный ответ.";
-  else if(senseMiss>0&&mechMiss>0) verdict="Начинаем с фундамента — со смысла дроби, дальше техника.";
-  else verdict="Сильная база и чувство числа — берём темп повыше! 🔥";
+  const mechMiss=qs.filter(q=>!DATA.senseQ.includes(q.id)&&!isCorrect(q.id)).length;
+  const total=qs.filter(q=>isCorrect(q.id)).length;
 
-  const total=DATA.questions.filter(q=>isCorrect(q.id)).length;
+  // Вердикт — связный абзац (крепкие + первая трещина + чувство/техника)
+  const vParts=[];
+  if(strong.length) vParts.push(`Фундамент держишь — <b>${strong.join(', ')}</b> ${strong.length>1?'идут':'идёт'} уверенно.`);
+  const ci=THEMES.findIndex(t=>status[t]!=='ok');
+  if(ci===-1) vParts.push('Пробелов не вижу — чисто по всей карте дробей.');
+  else vParts.push(`Первая трещина — в теме «${THEMES[ci]}».`);
+  if(senseMiss===0&&mechMiss===0) vParts.push('База и чувство числа крепкие — берём темп повыше! 🔥');
+  else if(senseMiss===0&&mechMiss>0) vParts.push('Число чувствуешь, техника местами хромает — это шлифуется.');
+  else if(mechMiss===0&&senseMiss>0) vParts.push('Считаешь по правилам, но размер ответа чувствуешь не всегда — быстро ставится.');
+  else vParts.push('Начнём с фундамента — со смысла дроби, дальше техника.');
+  const verdictPara=vParts.join(' ');
 
-  const mapHtml=THEMES.map(t=>`<div class="theme">
+  // карта тем: строка кликабельна → раскрывает разбор вопросов темы
+  const qByTheme={}; qs.forEach(q=>{(qByTheme[q.theme]=qByTheme[q.theme]||[]).push(q);});
+  const mapHtml=THEMES.map((t,ti)=>`
+    <div class="pf-theme tap" data-st="${ti}">
       <span class="dot ${status[t]}"></span>
       <span class="nm">${t}</span>
       <span class="st">${status[t]==='ok'?'крепко':status[t]==='warn'?'шатко':'пробел'}</span>
-    </div>`).join('');
+      <span class="caret">▸</span>
+    </div>
+    <div class="pf-rev" data-rev="${ti}">${(qByTheme[t]||[]).map(renderReview).join('')}</div>`).join('');
 
-  root.innerHTML=`<div class="screen">
-    <div class="kicker">Твоя карта · ${total} из 14</div>
-    <h1>Вот где ты сейчас</h1>
-    <div class="legend">
+  const summerHtml = gaps.length ? `
+    <div class="lk-card pf-card">
+      <b>Что подтянем</b>
+      <p style="margin:10px 0 0;font-size:15px;line-height:1.5"><b>${gaps.join(', ')}</b> — это закрывается за пару недель на спринте по дробям.</p>
+    </div>` : `
+    <div class="lk-card pf-card">
+      <b>Что дальше</b>
+      <p style="margin:10px 0 0;font-size:15px;line-height:1.5">Явных дыр по дробям нет — на пробном берём темп выше и идём дальше: проценты, задачи ОГЭ.</p>
+    </div>`;
+
+  const pf=document.getElementById('profile');
+  pf.innerHTML=`
+    <div class="lk-kicker" style="margin-bottom:10px">Твоя карта · ${total} из ${n}</div>
+    <h1 class="lk-h1 lk-glow" style="margin:0 0 14px">Вот где ты сейчас</h1>
+    <div class="pf-legend">
       <span><span class="dot ok"></span>крепко</span>
       <span><span class="dot warn"></span>шатко</span>
       <span><span class="dot gap"></span>пробел</span>
     </div>
-    <div class="map">${mapHtml}</div>
-    <div class="vcard">${verdict}</div>
-    ${strong.length?`<div class="vcard">💪 Крепко держишь: <b>${strong.join(', ')}</b>.</div>`:''}
-    ${gaps.length?`<div class="vcard">🎯 Подтянем: <b>${gaps.join(', ')}</b> — это закрывается за пару недель на спринте.</div>`:''}
-    <div class="btn-row" style="margin-top:8px">
-      <button class="btn" id="cta">Хочу разобрать на пробном 🎯</button>
-      <button class="btn ghost" id="again">Пройти ещё раз</button>
+    <div class="pf-map">${mapHtml}</div>
+    <div class="lk-card pf-card">${verdictPara}</div>
+    ${summerHtml}
+    <button class="lk-btn cta-btn" id="cta">${DATA.cta.label}</button>
+    <div class="pf-note" style="margin-top:10px">${DATA.cta.note}</div>
+    <button class="lk-btn lk-ghost" id="again" style="width:100%;margin-top:12px">Пройти ещё раз</button>
+    <div class="pf-note">Тест ничего не сохраняет о тебе лично — только твою карту по темам.</div>
+    <div class="lk-sign" style="margin-top:22px;justify-content:center">
+      <span class="lk-badge lk-badge-l">Λ</span>
+      <span class="lk-badge lk-badge-d">D.</span>
     </div>
-    <div class="note">Тест ничего не сохраняет — это только твоя картинка уровня.</div>
-  </div>`;
-  document.getElementById('again').onclick=()=>{DATA.questions.forEach(q=>delete q._shown);Object.keys(answers).forEach(k=>delete answers[k]);idx=0;intro();};
-  document.getElementById('cta').onclick=()=>{window.open(DATA.cta_url,'_blank');};
+    <div style="height:28px"></div>`;
+  pf.classList.add('show');
+  window.scrollTo(0,0);
+
+  pf.querySelectorAll('.pf-theme.tap').forEach(row=>row.addEventListener('click',()=>{
+    const rev=pf.querySelector(`.pf-rev[data-rev="${row.dataset.st}"]`);
+    row.classList.toggle('open');
+    if(rev) rev.classList.toggle('open');
+  }));
+  document.getElementById('cta').addEventListener('click',()=>{ reportResults(); window.open(DATA.cta.url,'_blank'); });
+  document.getElementById('again').addEventListener('click',()=>{
+    DATA.questions.forEach(q=>delete q._shown);
+    Object.keys(answers).forEach(k=>delete answers[k]);
+    idx=0;
+    pf.classList.remove('show'); pf.innerHTML='';
+    screen().hidden=false;
+    document.getElementById('hw-header').hidden=false;
+    render();
+  });
 }
 
-intro();
+/* ====== СТАРТ — сразу первый вопрос, без обложки ====== */
+render();
