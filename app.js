@@ -90,7 +90,9 @@ function lcm(a,b){return a/gcd(a,b)*b;}
    (token=код): Ди получает разбор в ВК, лид пишет «тест КОД» — Ди сматчит. ПДн нет.
    CORS эндпоинта пускает только прод github.io → локальные превью не шлют. */
 const HW_ENDPOINT='https://194-87-110-53.nip.io/hw-result';
-const LEAD_CODE=Math.random().toString(36).slice(2,6).toUpperCase();
+// Именной режим: ?u=ник → отчёт привязан к ученику. Без ?u= — анонимный код (лид с Авито).
+const NAMED_TOKEN=(new URLSearchParams(location.search).get('u')||'').slice(0,40);
+const LEAD_CODE=NAMED_TOKEN||Math.random().toString(36).slice(2,6).toUpperCase();
 let reported=false;
 
 /* ====== СОСТОЯНИЕ ====== */
@@ -476,6 +478,7 @@ function reportResults(){
 function showProfile(){
   document.getElementById('hw-header').hidden=true;
   screen().hidden=true;
+  if(NAMED_TOKEN) reportResults();   // именной ученик — отчёт уходит сам на финале, не ждём CTA
 
   const qs=DATA.questions, n=qs.length;
   const byTheme={}; qs.forEach(q=>{(byTheme[q.theme]=byTheme[q.theme]||[]).push(isCorrect(q.id));});
